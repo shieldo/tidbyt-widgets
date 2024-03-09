@@ -1,0 +1,7 @@
+Justfile
+.env
+target
+example.png
+example.webp
+.idea
+
