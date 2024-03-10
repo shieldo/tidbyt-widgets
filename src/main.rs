@@ -3,7 +3,9 @@ pub mod draw_buffer;
 use anyhow::{anyhow, Context, Error, Result};
 pub mod image;
 use tokio::time::{sleep, Duration};
+pub mod next_buses;
 pub mod pusher;
+
 use crate::draw_buffer::draw_buffer::get_rgba;
 use adjusted_color::adjusted_color::adjusted_color;
 use chrono::prelude::*;
@@ -356,7 +358,7 @@ macro_rules! vstack {
 }
 
 async fn render(args: &Args) -> Result<()> {
-    let local: DateTime<Local> = Local::now();
+    let _local: DateTime<Local> = Local::now();
     let width = 64i32;
     let height = 32i32;
     let mut config = WebPConfig::new().map_err(|_s| anyhow!("WebPConfig failed"))?;
@@ -406,7 +408,7 @@ async fn render(args: &Args) -> Result<()> {
         .collect();
 
     // Step 3: Add each frame to the encoder
-    let f: Vec<_> = frames
+    let _f: Vec<_> = frames
         .into_iter()
         .map(|frame| encoder.add_frame(frame))
         .collect();
