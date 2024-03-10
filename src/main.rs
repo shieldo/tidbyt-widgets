@@ -113,19 +113,19 @@ trait Widget: Send {
     fn render(&self, dt: &mut DrawTarget, point: Point, frame: u32) -> Result<(), Error>;
 }
 
-#[derive(Clone)]
-pub struct TextWidget {
-    text: String,
-    color: String,
+#[derive(Copy, Clone, Debug)]
+pub struct TextWidget<'a> {
+    text: &'a str,
+    color: &'a str,
 }
 
-impl TextWidget {
-    fn new(text: String, color: String) -> Result<TextWidget, anyhow::Error> {
-        Ok::<TextWidget, anyhow::Error>(TextWidget { text, color })
+impl<'a> TextWidget<'a> {
+    fn new(text: &'a str, color: &'a str) -> Result<TextWidget<'a>, Error> {
+        Ok::<TextWidget<'a>, Error>(TextWidget { text, color })
     }
 }
 
-impl Widget for TextWidget {
+impl<'a> Widget for TextWidget<'a> {
     fn measure(&self) -> Point {
         let width: f32 = self.text.chars().map(|x| advance(x)).sum();
         Point::new(width, 8.0)
@@ -359,14 +359,47 @@ macro_rules! vstack {
 }
 
 async fn render(args: &Args) -> Result<()> {
-    let _local: DateTime<Local> = Local::now();
+    let local: DateTime<Local> = Local::now();
+    let now: DateTime<FixedOffset> = local.into();
     let width = 64i32;
     let height = 32i32;
     let mut config = WebPConfig::new().map_err(|_s| anyhow!("WebPConfig failed"))?;
     config.lossless = 1;
     let mut encoder = AnimEncoder::new(width as u32, height as u32, &config);
 
-    let layout = vstack![hstack![get_next_buses().await]].map(|s| s.set_gap(2.0));
+    let next_buses = get_next_buses().await?;
+
+    let [widget1, widget2, widget3, widget4, widget5, widget6]: [TextWidget; 6] = next_buses
+        .iter()
+        .flat_map(|arrival| {
+            vec![
+                TextWidget::new(format!("{}", arrival.line).as_str(), "#fff").unwrap(),
+                TextWidget::new(
+                    format!("{} min", (arrival.expected_time - now).num_minutes()).as_str(),
+                    "#fff",
+                )
+                .unwrap(),
+            ]
+        })
+        .collect::<Vec<_>>()
+        .try_into()
+        .unwrap();
+
+    let layout = vstack![
+        hstack![
+            Ok::<TextWidget, Error>(widget1),
+            Ok::<TextWidget, Error>(widget2)
+        ],
+        hstack![
+            Ok::<TextWidget, Error>(widget3),
+            Ok::<TextWidget, Error>(widget4)
+        ],
+        hstack![
+            Ok::<TextWidget, Error>(widget5),
+            Ok::<TextWidget, Error>(widget6)
+        ]
+    ]
+    .map(|s| s.set_gap(2.0));
 
     let mut frames: Vec<Vec<u8>> = Vec::new();
 

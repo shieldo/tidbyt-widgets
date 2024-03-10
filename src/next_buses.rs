@@ -7,7 +7,7 @@ use quick_xml::Reader;
 use reqwest::header::USER_AGENT;
 use std::env;
 
-pub async fn get_next_buses() -> Result<TextWidget> {
+pub async fn get_next_buses<'a>() -> Result<Vec<ExpectedBusArrival>> {
     let api_user = env::var("NEXT_BUSES_API_USER")?;
     let api_pass = env::var("NEXT_BUSES_API_PASS")?;
     let bus_stop_code = env::var("BUS_STOP_NAPTAN_CODE")?;
@@ -28,40 +28,39 @@ pub async fn get_next_buses() -> Result<TextWidget> {
 </Siri>"#,
         now_str, api_user, now_str, "garbage", bus_stop_code
     );
-    let lookup = BusArrivalsLookup::from_xml(
-        reqwest::Client::new()
-            .post(format!(
-                "http://{}:{}@nextbus.mxdata.co.uk/nextbuses/1/0/1",
-                api_user, api_pass
-            ))
-            .body(payload)
-            .header(USER_AGENT, "tidbyt")
-            .send()
-            .await?
-            .text()
-            .await?
-            .as_str(),
-    )?;
-    Ok(TextWidget {
-        text: lookup
-            .arrivals
-            .iter()
-            .map(|arrival| {
-                format!(
-                    "{}, {} min",
-                    arrival.line,
-                    (arrival.expected_time - now).num_minutes()
-                )
-            })
-            .join("\n"),
-        color: String::from("#fff"),
-    })
+    let api_response = reqwest::Client::new()
+        .post(format!(
+            "http://{}:{}@nextbus.mxdata.co.uk/nextbuses/1.0/1",
+            api_user, api_pass
+        ))
+        .body(payload)
+        .header(USER_AGENT, "tidbyt")
+        .send()
+        .await?
+        .text()
+        .await?;
+    let lookup = BusArrivalsLookup::from_xml(api_response.as_str())?;
+    Ok(lookup.arrivals().to_owned())
+    // Ok(TextWidget {
+    //     text: lookup
+    //         .arrivals
+    //         .iter()
+    //         .map(|arrival| {
+    //             format!(
+    //                 "{}, {} min",
+    //                 arrival.line,
+    //                 (arrival.expected_time - now).num_minutes()
+    //             )
+    //         })
+    //         .join("\n"),
+    //     color: String::from("#fff"),
+    // })
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ExpectedBusArrival {
-    line: String,
-    expected_time: DateTime<FixedOffset>,
+    pub line: String,
+    pub expected_time: DateTime<FixedOffset>,
 }
 
 impl ExpectedBusArrival {
