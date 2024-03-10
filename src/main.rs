@@ -7,6 +7,7 @@ pub mod next_buses;
 pub mod pusher;
 
 use crate::draw_buffer::draw_buffer::get_rgba;
+use crate::next_buses::get_next_buses;
 use adjusted_color::adjusted_color::adjusted_color;
 use chrono::prelude::*;
 use clap::Parser;
@@ -365,24 +366,7 @@ async fn render(args: &Args) -> Result<()> {
     config.lossless = 1;
     let mut encoder = AnimEncoder::new(width as u32, height as u32, &config);
 
-    let (count, rec_chart) = (0, Vec::new());
-    let (miles_today, week_miles, miles_chart): (Option<f64>, _, _) = (None, 0.0, Vec::new());
-
-    let layout = vstack![
-        hstack![
-            TextWidget::new(format!("{} MAIL", count), String::from("#fff")),
-            ChartWidget::new(&rec_chart)
-        ],
-        hstack![
-            match miles_today {
-                None => TextWidget::new(String::from("RUN"), String::from("#fff")),
-                Some(mi) => TextWidget::new(format!("{:.0} MI", mi), String::from("#0f0")),
-            },
-            TextWidget::new(format!("{:.0} WK", week_miles), String::from("#fff")),
-            ChartWidget::new(&miles_chart)
-        ]
-    ]
-    .map(|s| s.set_gap(2.0));
+    let layout = vstack![hstack![get_next_buses().await]].map(|s| s.set_gap(2.0));
 
     let mut frames: Vec<Vec<u8>> = Vec::new();
 

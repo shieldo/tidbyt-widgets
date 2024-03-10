@@ -1,7 +1,62 @@
-use anyhow::bail;
-use chrono::{DateTime, FixedOffset};
+use crate::TextWidget;
+use anyhow::{bail, Result};
+use chrono::{DateTime, FixedOffset, Local};
+use itertools::Itertools;
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::Reader;
+use reqwest::header::USER_AGENT;
+use std::env;
+
+pub async fn get_next_buses() -> Result<TextWidget> {
+    let api_user = env::var("NEXT_BUSES_API_USER")?;
+    let api_pass = env::var("NEXT_BUSES_API_PASS")?;
+    let bus_stop_code = env::var("BUS_STOP_NAPTAN_CODE")?;
+    let now: DateTime<FixedOffset> = Local::now().into();
+    let now_str = now.to_rfc3339();
+    let payload = format!(
+        r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Siri version="1.0" xmlns="http://www.siri.org.uk/">
+<ServiceRequest>
+<RequestTimestamp>{}</RequestTimestamp>
+<RequestorRef>{}</RequestorRef>
+<StopMonitoringRequest version="1.0">
+<RequestTimestamp>{}</RequestTimestamp>
+<MessageIdentifier>{}</MessageIdentifier>
+<MonitoringRef>{}</MonitoringRef>
+</StopMonitoringRequest>
+</ServiceRequest>
+</Siri>"#,
+        now_str, api_user, now_str, "garbage", bus_stop_code
+    );
+    let lookup = BusArrivalsLookup::from_xml(
+        reqwest::Client::new()
+            .post(format!(
+                "http://{}:{}@nextbus.mxdata.co.uk/nextbuses/1/0/1",
+                api_user, api_pass
+            ))
+            .body(payload)
+            .header(USER_AGENT, "tidbyt")
+            .send()
+            .await?
+            .text()
+            .await?
+            .as_str(),
+    )?;
+    Ok(TextWidget {
+        text: lookup
+            .arrivals
+            .iter()
+            .map(|arrival| {
+                format!(
+                    "{}, {} min",
+                    arrival.line,
+                    (arrival.expected_time - now).num_minutes()
+                )
+            })
+            .join("\n"),
+        color: String::from("#fff"),
+    })
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ExpectedBusArrival {
@@ -88,6 +143,10 @@ impl BusArrivalsLookup {
         }
 
         Ok(BusArrivalsLookup { arrivals })
+    }
+
+    pub fn arrivals(&self) -> &[ExpectedBusArrival] {
+        &self.arrivals
     }
 }
 
