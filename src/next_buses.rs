@@ -71,12 +71,15 @@ impl BusArrivalsLookup {
             let event = reader.read_event_into(&mut buf)?;
 
             match event {
-                Event::Start(element) if arrivals.len() < 3 => match element.name().as_ref() {
-                    b"MonitoredStopVisit" => arrivals.push(ExpectedBusArrival::new_from_element(
-                        &mut reader,
-                        element,
-                        b"MonitoredStopVisit",
-                    )?),
+                Event::Start(element) => match element.name().as_ref() {
+                    b"MonitoredStopVisit" if arrivals.len() < 3 => {
+                        arrivals.push(ExpectedBusArrival::new_from_element(
+                            &mut reader,
+                            element,
+                            b"MonitoredStopVisit",
+                        )?)
+                    }
+                    b"MonitoredStopVisit" => break,
                     _ => (),
                 },
                 Event::Eof => break,
