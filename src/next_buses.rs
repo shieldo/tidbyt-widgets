@@ -1,4 +1,3 @@
-use crate::TextWidget;
 use anyhow::{bail, Result};
 use chrono::{DateTime, FixedOffset, Local};
 use itertools::Itertools;
@@ -7,7 +6,7 @@ use quick_xml::Reader;
 use reqwest::header::USER_AGENT;
 use std::env;
 
-pub async fn get_next_buses() -> Result<TextWidget> {
+pub async fn get_next_buses<'a>() -> Result<Vec<ExpectedBusArrival>> {
     let api_user = env::var("NEXT_BUSES_API_USER")?;
     let api_pass = env::var("NEXT_BUSES_API_PASS")?;
     let bus_stop_code = env::var("BUS_STOP_NAPTAN_CODE")?;
@@ -28,40 +27,40 @@ pub async fn get_next_buses() -> Result<TextWidget> {
 </Siri>"#,
         now_str, api_user, now_str, "garbage", bus_stop_code
     );
-    let lookup = BusArrivalsLookup::from_xml(
-        reqwest::Client::new()
-            .post(format!(
-                "http://{}:{}@nextbus.mxdata.co.uk/nextbuses/1/0/1",
-                api_user, api_pass
-            ))
-            .body(payload)
-            .header(USER_AGENT, "tidbyt")
-            .send()
-            .await?
-            .text()
-            .await?
-            .as_str(),
-    )?;
-    Ok(TextWidget {
-        text: lookup
-            .arrivals
-            .iter()
-            .map(|arrival| {
-                format!(
-                    "{}, {} min",
-                    arrival.line,
-                    (arrival.expected_time - now).num_minutes()
-                )
-            })
-            .join("\n"),
-        color: String::from("#fff"),
-    })
+    let api_response = reqwest::Client::new()
+        .post(format!(
+            "http://{}:{}@nextbus.mxdata.co.uk/nextbuses/1.0/1",
+            api_user, api_pass
+        ))
+        .body(payload)
+        .header(USER_AGENT, "tidbyt")
+        .send()
+        .await?
+        .text()
+        .await?;
+    println!("response: {api_response:?}");
+    let lookup = BusArrivalsLookup::from_xml(api_response.as_str())?;
+    Ok(lookup.arrivals().to_owned())
+    // Ok(TextWidget {
+    //     text: lookup
+    //         .arrivals
+    //         .iter()
+    //         .map(|arrival| {
+    //             format!(
+    //                 "{}, {} min",
+    //                 arrival.line,
+    //                 (arrival.expected_time - now).num_minutes()
+    //             )
+    //         })
+    //         .join("\n"),
+    //     color: String::from("#fff"),
+    // })
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ExpectedBusArrival {
-    line: String,
-    expected_time: DateTime<FixedOffset>,
+    pub line: String,
+    pub expected_time: DateTime<FixedOffset>,
 }
 
 impl ExpectedBusArrival {
@@ -73,6 +72,7 @@ impl ExpectedBusArrival {
         let mut buf = Vec::new();
         let mut line: Option<String> = None;
         let mut expected_time: Option<DateTime<FixedOffset>> = None;
+        let mut aimed_time: Option<DateTime<FixedOffset>> = None;
 
         loop {
             let event = reader.read_event_into(&mut buf)?;
@@ -87,6 +87,11 @@ impl ExpectedBusArrival {
                             reader.read_text(el.name())?.as_ref(),
                         )?)
                     }
+                    b"AimedDepartureTime" => {
+                        aimed_time = Some(DateTime::parse_from_rfc3339(
+                            reader.read_text(el.name())?.as_ref(),
+                        )?)
+                    }
                     _ => (),
                 },
                 Event::End(el) if el.name().as_ref() == end_element => break,
@@ -95,9 +100,15 @@ impl ExpectedBusArrival {
             }
         }
 
+        let expected_time = expected_time.or(aimed_time);
+
         let (line, expected_time) = if line.is_some() && expected_time.is_some() {
             (line.unwrap(), expected_time.unwrap())
         } else {
+            println!(
+                "Line is: {:?}, expected time is: {:?}, aimed time is: {:?}",
+                line, expected_time, aimed_time
+            );
             bail!("did not parse");
         };
 
@@ -105,6 +116,12 @@ impl ExpectedBusArrival {
             line,
             expected_time,
         })
+    }
+
+    pub fn minutes_from_now(&self) -> Result<u32, anyhow::Error> {
+        let local: DateTime<Local> = Local::now();
+        let now: DateTime<FixedOffset> = local.into();
+        Ok((self.expected_time - now).num_minutes().try_into()?)
     }
 }
 
@@ -127,20 +144,25 @@ impl BusArrivalsLookup {
 
             match event {
                 Event::Start(element) => match element.name().as_ref() {
-                    b"MonitoredStopVisit" if arrivals.len() < 3 => {
-                        arrivals.push(ExpectedBusArrival::new_from_element(
-                            &mut reader,
-                            element,
-                            b"MonitoredStopVisit",
-                        )?)
-                    }
-                    b"MonitoredStopVisit" => break,
+                    b"MonitoredStopVisit" => arrivals.push(ExpectedBusArrival::new_from_element(
+                        &mut reader,
+                        element,
+                        b"MonitoredStopVisit",
+                    )?),
                     _ => (),
                 },
                 Event::Eof => break,
                 _ => (),
             }
         }
+
+        let minutes_away = env::var("MINUTES_AWAY")?.parse::<u32>()?;
+        let arrivals = arrivals
+            .iter()
+            .filter(|arrival| arrival.minutes_from_now().unwrap() >= minutes_away)
+            .take(3)
+            .cloned()
+            .collect();
 
         Ok(BusArrivalsLookup { arrivals })
     }

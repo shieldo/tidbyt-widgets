@@ -35,6 +35,8 @@ pub mod pusher {
             .send()
             .await?;
 
+        println!("{resp:?}");
+
         if resp.status().as_u16() != 200 {
             println!("{:?}", resp.text().await.unwrap());
         }
