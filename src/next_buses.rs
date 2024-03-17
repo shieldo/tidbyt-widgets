@@ -38,7 +38,6 @@ pub async fn get_next_buses<'a>() -> Result<Vec<ExpectedBusArrival>> {
         .await?
         .text()
         .await?;
-    println!("response: {api_response:?}");
     let lookup = BusArrivalsLookup::from_xml(api_response.as_str())?;
     Ok(lookup.arrivals().to_owned())
     // Ok(TextWidget {
@@ -105,10 +104,6 @@ impl ExpectedBusArrival {
         let (line, expected_time) = if line.is_some() && expected_time.is_some() {
             (line.unwrap(), expected_time.unwrap())
         } else {
-            println!(
-                "Line is: {:?}, expected time is: {:?}, aimed time is: {:?}",
-                line, expected_time, aimed_time
-            );
             bail!("did not parse");
         };
 
