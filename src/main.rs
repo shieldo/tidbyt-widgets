@@ -95,7 +95,7 @@ fn advance(c: char) -> f32 {
 async fn main() -> Result<()> {
     dotenv().ok();
     let args = Args::parse();
-    let ten_seconds = Duration::from_secs(10);
+    let thirty_seconds = Duration::from_secs(30);
 
     loop {
         render(&args).await?;
@@ -104,7 +104,7 @@ async fn main() -> Result<()> {
             break;
         }
 
-        sleep(ten_seconds).await;
+        sleep(thirty_seconds).await;
     }
 
     Ok(())
