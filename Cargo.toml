@@ -33,3 +33,6 @@ webp = "0.2.6"
 
 [dev-dependencies]
 rstest = "0.18.2"
+
+[lints.clippy]
+module-inception = "allow"

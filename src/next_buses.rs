@@ -1,6 +1,5 @@
 use anyhow::{bail, Result};
 use chrono::{DateTime, FixedOffset, Local};
-use itertools::Itertools;
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::Reader;
 use reqwest::header::USER_AGENT;
@@ -87,10 +86,9 @@ impl ExpectedBusArrival {
 
         let expected_time = expected_time.or(aimed_time);
 
-        let (line, expected_time) = if line.is_some() && expected_time.is_some() {
-            (line.unwrap(), expected_time.unwrap())
-        } else {
-            bail!("did not parse");
+        let (line, expected_time) = match (line, expected_time) {
+            (Some(line), Some(expected_time)) => (line, expected_time),
+            _ => bail!("did not parse"),
         };
 
         Ok(ExpectedBusArrival {
@@ -124,14 +122,15 @@ impl BusArrivalsLookup {
             let event = reader.read_event_into(&mut buf)?;
 
             match event {
-                Event::Start(element) => match element.name().as_ref() {
-                    b"MonitoredStopVisit" => arrivals.push(ExpectedBusArrival::new_from_element(
-                        &mut reader,
-                        element,
-                        b"MonitoredStopVisit",
-                    )?),
-                    _ => (),
-                },
+                Event::Start(element) => {
+                    if element.name().as_ref() == b"MonitoredStopVisit" {
+                        arrivals.push(ExpectedBusArrival::new_from_element(
+                            &mut reader,
+                            element,
+                            b"MonitoredStopVisit",
+                        )?)
+                    }
+                }
                 Event::Eof => break,
                 _ => (),
             }

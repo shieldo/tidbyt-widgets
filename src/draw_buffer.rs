@@ -12,7 +12,7 @@ pub mod draw_buffer {
             let a = (pixel >> 24) & 0xffu32;
             let mut r = (pixel >> 16) & 0xffu32;
             let mut g = (pixel >> 8) & 0xffu32;
-            let mut b = (pixel >> 0) & 0xffu32;
+            let mut b = *pixel & 0xffu32;
 
             if a > 0u32 {
                 r = r * 255u32 / a;

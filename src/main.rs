@@ -3,7 +3,6 @@ pub mod draw_buffer;
 
 use anyhow::{anyhow, Context, Error, Result};
 use std::borrow::Cow;
-pub mod image;
 use tokio::time::{sleep, Duration};
 pub mod next_buses;
 pub mod pusher;
@@ -44,7 +43,7 @@ fn draw_text(
 ) -> Result<()> {
     let tom_thumb = include_bytes!("../fonts/tb-8.bdf");
     let font: bdf::Font = bdf::read(&tom_thumb[..])?;
-    let mut start = in_start.clone();
+    let mut start = in_start;
     let chars: Vec<char> = match align {
         TextAlign::Left => text.chars().collect(),
         TextAlign::Right => text.chars().rev().collect(),
@@ -71,12 +70,11 @@ fn draw_text(
                 )
             }
         }
-        start.x = start.x
-            + advance(c)
-                * match align {
-                    TextAlign::Left => 1.0,
-                    TextAlign::Right => -1.0,
-                }
+        start.x += advance(c)
+            * match align {
+                TextAlign::Left => 1.0,
+                TextAlign::Right => -1.0,
+            }
     }
     Ok(())
 }
@@ -131,14 +129,14 @@ impl<'a> TextWidget<'a> {
 
 impl<'a> Widget for TextWidget<'a> {
     fn measure(&self) -> Point {
-        let width: f32 = self.text.chars().map(|x| advance(x)).sum();
+        let width: f32 = self.text.chars().map(advance).sum();
         Point::new(width, 8.0)
     }
     fn frame_count(&self) -> u32 {
         1
     }
-    fn render(&self, dt: &mut DrawTarget, point: Point, frame: u32) -> Result<(), Error> {
-        let color = adjusted_color(&self.color)?;
+    fn render(&self, dt: &mut DrawTarget, point: Point, _frame: u32) -> Result<(), Error> {
+        let color = adjusted_color(self.color)?;
         draw_text(dt, &self.text, point, &color, TextAlign::Left)
     }
 }
@@ -149,9 +147,9 @@ struct ChartWidget {
 }
 
 impl ChartWidget {
-    fn new(data: &Vec<u64>) -> Result<ChartWidget, anyhow::Error> {
+    fn new(data: &[u64]) -> Result<ChartWidget, anyhow::Error> {
         Ok::<ChartWidget, anyhow::Error>(ChartWidget {
-            data: data.clone(),
+            data: data.to_owned(),
             height: 5,
         })
     }
@@ -164,11 +162,11 @@ impl Widget for ChartWidget {
     fn frame_count(&self) -> u32 {
         1
     }
-    fn render(&self, dt: &mut DrawTarget, point: Point, frame: u32) -> Result<()> {
+    fn render(&self, dt: &mut DrawTarget, point: Point, _frame: u32) -> Result<()> {
         if self.data.is_empty() {
             return Ok(());
         }
-        let mut pt = point.clone();
+        let mut pt = point;
         for d in &self.data {
             let mut h = (d + 1) as f32;
             let high = h > 8.0;
@@ -256,10 +254,10 @@ impl Widget for HStack {
             // Add any extra remainder space to the last gap.
             if remainder > 0 {
                 if let Some(last) = spaces.last_mut() {
-                    *last = *last + remainder as f32;
+                    *last += remainder as f32;
                 }
             }
-            let mut start_point = point.clone();
+            let mut start_point = point;
             for (i, item) in self.items.iter().enumerate() {
                 item.render(dt, start_point, frame)?;
                 start_point.x = start_point.x + item.measure().x + spaces.get(i).unwrap_or(&0.0);
@@ -296,7 +294,7 @@ impl Widget for VStack {
             .unwrap_or(1)
     }
     fn render(&self, dt: &mut DrawTarget, point: Point, frame: u32) -> Result<()> {
-        let mut start_point = point.clone();
+        let mut start_point = point;
         for item in self.items.iter() {
             item.render(dt, start_point, frame)?;
             start_point.y = start_point.y + item.measure().y + self.gap;
@@ -377,7 +375,7 @@ async fn render(args: &Args) -> Result<()> {
         .iter()
         .flat_map(|arrival| {
             vec![
-                TextWidget::new(format!("{}", arrival.line).into(), "#fff").unwrap(),
+                TextWidget::new(arrival.line.to_string().into(), "#fff").unwrap(),
                 TextWidget::new(
                     format!("{} min", (arrival.expected_time - now).num_minutes()).into(),
                     "#fff",
@@ -420,7 +418,7 @@ async fn render(args: &Args) -> Result<()> {
     }
 
     // Step 1: Clone all outputs
-    let cloned_outputs: Vec<_> = frames.into_iter().map(|output| output.clone()).collect();
+    let cloned_outputs: Vec<_> = frames.into_iter().collect();
 
     // Step 2: Create AnimFrames
     let frames: Vec<_> = cloned_outputs

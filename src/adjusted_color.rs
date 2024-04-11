@@ -21,7 +21,7 @@ pub mod adjusted_color {
     }
 
     pub fn adjusted_color_with_tint(hex: &str, tint: f64) -> Result<raqote::Source<'static>> {
-        let mut color = Srgb::from_str(&hex)?.into_linear();
+        let mut color = Srgb::from_str(hex)?.into_linear();
 
         color = color.darken(get_sun_darkening() + tint);
 
