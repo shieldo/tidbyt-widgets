@@ -3,7 +3,7 @@ use chrono::{DateTime, FixedOffset, Local};
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::Reader;
 use reqwest::header::USER_AGENT;
-use std::env;
+
 
 pub async fn get_next_buses<'a>() -> Result<Vec<ExpectedBusArrival>> {
     let api_user = dotenvy::var("NEXT_BUSES_API_USER")?;
