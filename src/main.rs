@@ -23,6 +23,8 @@ struct Args {
     /// Filename of the debug file
     #[arg(short, long)]
     debug: Option<String>,
+    #[arg(short, long)]
+    retry: Option<u64>,
 }
 
 // Built in 2px of buffer.
@@ -93,7 +95,7 @@ fn advance(c: char) -> f32 {
 async fn main() -> Result<()> {
     dotenv()?;
     let args = Args::parse();
-    let thirty_seconds = Duration::from_secs(30);
+    let duration = args.retry.map(|retry_time| Duration::from_secs(retry_time));
 
     loop {
         render(&args).await?;
@@ -102,7 +104,10 @@ async fn main() -> Result<()> {
             break;
         }
 
-        sleep(thirty_seconds).await;
+        match duration {
+            Some(duration) => sleep(duration).await,
+            None => break,
+        }
     }
 
     Ok(())
