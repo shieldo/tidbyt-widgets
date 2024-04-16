@@ -1,0 +1,15 @@
+on:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  generate-times:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@4
+      - run: rustup toolchain install stable --profile minimal
+      - uses: Swatinem/rust-cache
+      - name: Generate times and push to Tidbyt
+        run: cargo b --release
