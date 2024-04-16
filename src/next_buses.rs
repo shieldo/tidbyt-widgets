@@ -6,9 +6,9 @@ use reqwest::header::USER_AGENT;
 use std::env;
 
 pub async fn get_next_buses<'a>() -> Result<Vec<ExpectedBusArrival>> {
-    let api_user = env::var("NEXT_BUSES_API_USER")?;
-    let api_pass = env::var("NEXT_BUSES_API_PASS")?;
-    let bus_stop_code = env::var("BUS_STOP_NAPTAN_CODE")?;
+    let api_user = dotenvy::var("NEXT_BUSES_API_USER")?;
+    let api_pass = dotenvy::var("NEXT_BUSES_API_PASS")?;
+    let bus_stop_code = dotenvy::var("BUS_STOP_NAPTAN_CODE")?;
     let now: DateTime<FixedOffset> = Local::now().into();
     let now_str = now.to_rfc3339();
     let payload = format!(
@@ -136,7 +136,7 @@ impl BusArrivalsLookup {
             }
         }
 
-        let minutes_away = env::var("MINUTES_AWAY")?.parse::<u32>()?;
+        let minutes_away = dotenvy::var("MINUTES_AWAY")?.parse::<u32>()?;
         let arrivals = arrivals
             .iter()
             .filter(|arrival| arrival.minutes_from_now().unwrap() >= minutes_away)

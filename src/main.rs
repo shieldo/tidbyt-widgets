@@ -12,7 +12,7 @@ use crate::next_buses::get_next_buses;
 use adjusted_color::adjusted_color::adjusted_color;
 use chrono::prelude::*;
 use clap::Parser;
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use pusher::pusher::push;
 use raqote::*;
 use webp::{AnimEncoder, AnimFrame, WebPConfig};
@@ -91,7 +91,7 @@ fn advance(c: char) -> f32 {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    dotenv().ok();
+    dotenv()?;
     let args = Args::parse();
     let thirty_seconds = Duration::from_secs(30);
 
