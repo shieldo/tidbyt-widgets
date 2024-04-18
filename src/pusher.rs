@@ -38,6 +38,8 @@ pub mod pusher {
 
         if resp.status().as_u16() != 200 {
             println!("{:?}", resp.text().await.unwrap());
+        } else {
+            println!("Successfully pushed to Tidbyt");
         }
 
         Ok(true)
