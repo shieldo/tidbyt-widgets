@@ -93,7 +93,7 @@ fn advance(c: char) -> f32 {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    dotenv()?;
+    let _ = dotenv();
     let args = Args::parse();
     let duration = args.retry.map(|retry_time| Duration::from_secs(retry_time));
 
