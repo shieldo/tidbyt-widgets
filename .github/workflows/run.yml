@@ -13,6 +13,8 @@ jobs:
       - uses: actions/checkout@v4
       - run: rustup toolchain install stable --profile minimal
       - uses: Swatinem/rust-cache@v2
+        with:
+          cache-all-crates: "true"
       - name: Generate times and push to Tidbyt
         env:
           BUS_STOP_NAPTAN_CODE: ${{ secrets.BUS_STOP_NAPTAN_CODE }}
