@@ -3,6 +3,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
 
 jobs:
   generate-times:
@@ -12,4 +13,4 @@ jobs:
       - run: rustup toolchain install stable --profile minimal
       - uses: Swatinem/rust-cache@v2
       - name: Generate times and push to Tidbyt
-        run: cargo run --release
+        run: cargo run
