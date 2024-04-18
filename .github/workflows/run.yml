@@ -12,4 +12,11 @@ jobs:
       - run: rustup toolchain install stable --profile minimal
       - uses: Swatinem/rust-cache@v2
       - name: Generate times and push to Tidbyt
+        env:
+          BUS_STOP_NAPTAN_CODE: ${{ secrets.BUS_STOP_NAPTAN_CODE }}
+          MINUTES_AWAY: ${{ secrets.MINUTES_AWAY }}
+          NEXT_BUSES_API_PASS: ${{ secrets.NEXT_BUSES_API_PASS }}
+          NEXT_BUSES_API_USER: ${{ secrets.NEXT_BUSES_API_USER }}
+          TIDBYT_ID: ${{ secrets.TIDBYT_ID }}
+          TIDBYT_KEY: ${{ secrets.TIDBYT_KEY }}
         run: cargo run --release
