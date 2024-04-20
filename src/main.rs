@@ -386,7 +386,7 @@ async fn render(args: &Args) -> Result<()> {
                         "{}",
                         arrival
                             .expected_time
-                            .format_localized("%H:%m", Locale::en_GB)
+                            .format_localized("%H:%M", Locale::en_GB)
                     )
                     .into(),
                     "#fff",
