@@ -10,7 +10,7 @@ pub mod pusher;
 use crate::draw_buffer::draw_buffer::get_rgba;
 use crate::next_buses::get_next_buses;
 use adjusted_color::adjusted_color::adjusted_color;
-use chrono::prelude::*;
+use chrono::{prelude::*, Locale};
 use clap::Parser;
 use dotenvy::dotenv;
 use pusher::pusher::push;
@@ -366,8 +366,8 @@ macro_rules! vstack {
 }
 
 async fn render(args: &Args) -> Result<()> {
-    let local: DateTime<Local> = Local::now();
-    let now: DateTime<FixedOffset> = local.into();
+    let _local: DateTime<Local> = Local::now();
+    let _now: DateTime<FixedOffset> = _local.into();
     let width = 64i32;
     let height = 32i32;
     let mut config = WebPConfig::new().map_err(|_s| anyhow!("WebPConfig failed"))?;
@@ -382,7 +382,13 @@ async fn render(args: &Args) -> Result<()> {
             vec![
                 TextWidget::new(arrival.line.to_string().into(), "#fff").unwrap(),
                 TextWidget::new(
-                    format!("{} min", (arrival.expected_time - now).num_minutes()).into(),
+                    format!(
+                        "{}",
+                        arrival
+                            .expected_time
+                            .format_localized("%H:%m", Locale::en_GB)
+                    )
+                    .into(),
                     "#fff",
                 )
                 .unwrap(),
