@@ -27,4 +27,5 @@ jobs:
           NEXT_BUSES_API_USER: ${{ secrets.NEXT_BUSES_API_USER }}
           TIDBYT_ID: ${{ secrets.TIDBYT_ID }}
           TIDBYT_KEY: ${{ secrets.TIDBYT_KEY }}
+          OUTPUT_TIMEZONE: ${{ secrets.OUTPUT_TIMEZONE }}
         run: cargo run --release
