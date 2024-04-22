@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: "1"
 
 jobs:
   generate-times:
@@ -27,4 +28,4 @@ jobs:
           NEXT_BUSES_API_USER: ${{ secrets.NEXT_BUSES_API_USER }}
           TIDBYT_ID: ${{ secrets.TIDBYT_ID }}
           TIDBYT_KEY: ${{ secrets.TIDBYT_KEY }}
-        run: cargo run --release
+        run: cargo run
