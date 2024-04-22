@@ -11,6 +11,7 @@ use crate::draw_buffer::draw_buffer::get_rgba;
 use crate::next_buses::get_next_buses;
 use adjusted_color::adjusted_color::adjusted_color;
 use chrono::{prelude::*, Locale};
+use chrono_tz::Tz;
 use clap::Parser;
 use dotenvy::dotenv;
 use pusher::pusher::push;
@@ -368,6 +369,7 @@ macro_rules! vstack {
 async fn render(args: &Args) -> Result<()> {
     let _local: DateTime<Local> = Local::now();
     let _now: DateTime<FixedOffset> = _local.into();
+    let timezone: Tz = dotenvy::var("OUTPUT_TIMEZONE")?.parse()?;
     let width = 64i32;
     let height = 32i32;
     let mut config = WebPConfig::new().map_err(|_s| anyhow!("WebPConfig failed"))?;
@@ -386,6 +388,7 @@ async fn render(args: &Args) -> Result<()> {
                         "{}",
                         arrival
                             .expected_time
+                            .with_timezone(&timezone)
                             .format_localized("%H:%M", Locale::en_GB)
                     )
                     .into(),
