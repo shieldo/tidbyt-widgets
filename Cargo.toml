@@ -8,7 +8,8 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.75"
 base64 = "0.21.2"
-bdf = "0.6.0"
+bdf = { git = "https://github.com/meh/rust-bdf.git", rev = "2eceb66" }
+bit-set = "0.8.0"
 cached = "0.44.0"
 chrono = { version = "0.4.26", features = ["unstable-locales"] }
 chrono-tz = "0.9.0"
