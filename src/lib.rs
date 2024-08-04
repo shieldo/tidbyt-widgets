@@ -3,7 +3,6 @@ pub mod draw_buffer;
 
 use anyhow::{anyhow, Context, Error, Result};
 use std::borrow::Cow;
-use tokio::time::{sleep, Duration};
 pub mod next_buses;
 pub mod pusher;
 
@@ -12,7 +11,6 @@ use crate::next_buses::get_next_buses;
 use adjusted_color::adjusted_color::adjusted_color;
 use chrono::{prelude::*, Locale};
 use chrono_tz::Tz;
-use clap::Parser;
 use pusher::pusher::push;
 use raqote::*;
 use webp::{AnimEncoder, AnimFrame, WebPConfig};
@@ -27,9 +25,15 @@ enum TextAlign {
 }
 
 #[derive(Debug)]
-pub struct Args {
+pub struct RenderArgs {
     debug: Option<String>,
     retry: Option<u64>,
+}
+
+impl RenderArgs {
+    pub fn new(debug: Option<String>, retry: Option<u64>) -> Self {
+        Self { debug, retry }
+    }
 }
 
 fn draw_text(
@@ -339,7 +343,7 @@ macro_rules! vstack {
     };
 }
 
-pub async fn render(args: Args) -> Result<()> {
+pub async fn render(args: RenderArgs) -> Result<()> {
     let _local: DateTime<Local> = Local::now();
     let _now: DateTime<FixedOffset> = _local.into();
     let timezone: Tz = dotenvy::var("OUTPUT_TIMEZONE")?.parse()?;

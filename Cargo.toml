@@ -43,6 +43,6 @@ doctest = false
 module-inception = "allow"
 
 [[bin]]
-name = "hem"
+name = "tidbyt-rs"
 path = "src/main.rs"
 doc = false
