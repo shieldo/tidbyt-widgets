@@ -36,5 +36,13 @@ webp = "0.2.6"
 [dev-dependencies]
 rstest = "0.18.2"
 
+[lib]
+doctest = false
+
 [lints.clippy]
 module-inception = "allow"
+
+[[bin]]
+name = "hem"
+path = "src/main.rs"
+doc = false
