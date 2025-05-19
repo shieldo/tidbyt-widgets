@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
+      - name: "install fontconfig"
+        run: "sudo apt install -y libfontconfig1-dev"
       - uses: actions/checkout@v4
       - run: rustup toolchain install stable --profile minimal
       - uses: Swatinem/rust-cache@v2
